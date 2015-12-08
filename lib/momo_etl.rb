@@ -9,12 +9,13 @@ require "momo_etl/version"
 module MomoEtl
   class Job
 
-    attr_reader :args, :errors, :row_data
+    attr_reader :args, :errors, :row_data, :fail_fast
 
     def initialize(args = {})
       @args = args
       @errors = []
       @row_data = {}
+      @fail_fast = args[:fail_fast] || false
     end
 
     def run
@@ -59,7 +60,6 @@ module MomoEtl
     end
 
     def before_row(row)
-      row.data = {}
     end
 
     def after_row(row)
@@ -132,7 +132,9 @@ module MomoEtl
           yield
         rescue => e
           @errors << e
-          #raise
+          if fail_fast
+            raise
+          end
           nil
         end
       end
