@@ -20,6 +20,9 @@ module MomoEtl
 
     def run
       i = 0
+
+      checks!
+
       read do |row|
 
         row = row.extend(Row)
@@ -32,7 +35,6 @@ module MomoEtl
         before_row(row)
 
         row = run_transforms(row)
-
         with_ceremony do
           write(row)
         end
@@ -44,14 +46,17 @@ module MomoEtl
       after_all
     end
 
-    ## How to read. Must take a block, and yield a row-hash to it
-    def read
-      raise 'To be implemented by child-class'
-    end
 
-    ## How to write the row.
-    def write(row)
-      raise 'To be implemented by child-class'
+    def checks!
+      ## How to read. Must take a block, and yield a row-hash to it
+      unless self.respond_to?(:read)
+        raise "ETL must have a `read` method"
+      end
+
+      ## How to write the row.
+      unless self.respond_to?(:write)
+        raise "ETL must have a `write` method"
+      end
     end
 
     # Called before reading the rows
@@ -92,10 +97,11 @@ module MomoEtl
       def run_transforms(row)
         transforms.each do |transform|
           
+          # TODO: remove
           # Skip if the transform is not defined, by any chance
           next unless self.respond_to?(transform)
 
-          run_single_transform(row, transform)
+          row = run_single_transform(row, transform)
         end
         row
       end
@@ -110,6 +116,7 @@ module MomoEtl
           self.public_send(transform, row)
         end
 
+        # TODO: raise exception if row1 is not a hash
         # If the transform returns nil, use the older row object
         # If the transform returns non-nil, assign it to the row variable
         if row1.nil?
