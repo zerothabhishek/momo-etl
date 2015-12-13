@@ -11,9 +11,18 @@ class MomoEtlReadTest < Minitest::Test
     end
 
     # Without any transforms, the write should get all the data that was read
-    def write(row);
+    def write(row)
       args[:db] << row
     end
+  end
+
+  module SampleEtl2
+
+    def read
+      yield({ a: 2 })
+    end
+
+    def write(row); end
   end
 
   ## Tests ####################################
@@ -24,7 +33,7 @@ class MomoEtlReadTest < Minitest::Test
   end
 
   # Extraction happens in `read` method
-  def test__read
+  def test_read
 
     klass = Class.new(MomoEtl::Job){ include SampleEtl }
     klass.new.run(rowset: @sample_rows, db: @fake_db)
@@ -33,11 +42,22 @@ class MomoEtlReadTest < Minitest::Test
   end
 
   # Fails if read method is not defined
-  def test__read1
+  def test_read1
 
     klass = Class.new(MomoEtl::Job)
     assert_raises("ETL must have a `read` method") do
       klass.new.run(rowset: @sample_rows)
     end
+  end
+
+  # `read` method should yield a hash to the supplied block
+  def test_read2
+
+    klass = Class.new(MomoEtl::Job){ include SampleEtl2 }
+    j = klass.new
+
+    t = nil
+    j.read { |h| t = h }
+    assert_equal Hash, t.class
   end
 end

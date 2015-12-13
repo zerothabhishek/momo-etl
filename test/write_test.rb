@@ -20,6 +20,28 @@ class WriteTest < MiniTest::Test
     end
   end
 
+  module SampleEtl2
+    def read
+      args[:rowset].each{ |r| yield r }
+    end
+
+    def transform_a(row)
+      row[:x] = 500
+      row
+    end
+
+    def transform_b(row)
+      row[:y] = 600
+      args[:o][:transform_b] = row
+      row
+    end
+
+    def write(row)
+      args[:i][:write] = row
+    end
+  end
+
+
   ## Tests ####################################
 
   def setup
@@ -44,5 +66,15 @@ class WriteTest < MiniTest::Test
     assert_raises("ETL must have a `write` method") do
       klass.new.run(rowset: @sample_rows)
     end
+  end
+
+  # output from the last transform is the input to write
+  def test_write2
+    inputs = {}
+    outputs = {}
+    klass = Class.new(MomoEtl::Job){ include SampleEtl2 }
+    klass.new.run(rowset: @sample_rows, i: inputs, o: outputs)
+
+    assert outputs[:transform_b] == inputs[:write]
   end
 end
