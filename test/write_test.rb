@@ -31,7 +31,7 @@ class WriteTest < MiniTest::Test
   def test__write
 
     klass = Class.new(MomoEtl::Job){ include SampleEtl }
-    klass.new(rowset: @sample_rows, db: @fake_db).run
+    klass.new.run(rowset: @sample_rows, db: @fake_db)
 
     assert_equal @fake_db, @sample_rows
   end
@@ -42,7 +42,7 @@ class WriteTest < MiniTest::Test
     klass = Class.new(MomoEtl::Job){ include SampleEtl1 }
 
     assert_raises("ETL must have a `write` method") do
-      klass.new(rowset: @sample_rows).run
+      klass.new.run(rowset: @sample_rows)
     end
   end
 end

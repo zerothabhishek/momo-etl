@@ -84,7 +84,7 @@ class TransformTest < MiniTest::Test
     row   = { a: 10, b: 20 }
     row_t = { a: 10, b:20, c:30 }
 
-    j = klass.new(rowset: [row], db: fake_db); j.run
+    klass.new.run(rowset: [row], db: fake_db)
     assert_equal(row_t, fake_db[0])
   end
 
@@ -93,7 +93,7 @@ class TransformTest < MiniTest::Test
     row = { a: 10, b: 20 }
     seq = []
     klass = Class.new(MomoEtl::Job){ include SampleEtl1 }
-    klass.new(rowset: [row], seq: seq).run
+    klass.new.run(rowset: [row], seq: seq)
 
     assert_equal %w(transform_a transform_b transform_c), seq
   end
@@ -105,7 +105,7 @@ class TransformTest < MiniTest::Test
     outputs = {}
 
     klass = Class.new(MomoEtl::Job){ include SampleEtl2 }
-    klass.new(rowset: [row], i: inputs, o: outputs).run
+    klass.new.run(rowset: [row], i: inputs, o: outputs)
 
     assert outputs[:transform_a] == inputs[:transform_b] &&
            outputs[:transform_b] == inputs[:transform_c]

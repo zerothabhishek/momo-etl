@@ -11,14 +11,13 @@ module MomoEtl
 
     attr_reader :args, :errors, :row_data, :fail_fast
 
-    def initialize(args = {})
+    def run(args = {})
+
       @args = args
       @errors = []
       @row_data = {}
       @fail_fast = args[:fail_fast] || false
-    end
 
-    def run
       i = 0
 
       checks!

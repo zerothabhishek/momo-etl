@@ -27,7 +27,7 @@ class MomoEtlReadTest < Minitest::Test
   def test__read
 
     klass = Class.new(MomoEtl::Job){ include SampleEtl }
-    klass.new(rowset: @sample_rows, db: @fake_db).run
+    klass.new.run(rowset: @sample_rows, db: @fake_db)
 
     assert_equal @sample_rows, @fake_db
   end
@@ -37,7 +37,7 @@ class MomoEtlReadTest < Minitest::Test
 
     klass = Class.new(MomoEtl::Job)
     assert_raises("ETL must have a `read` method") do
-      klass.new(rowset: @sample_rows).run
+      klass.new.run(rowset: @sample_rows)
     end
   end
 end
