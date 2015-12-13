@@ -9,13 +9,12 @@ require "momo_etl/version"
 module MomoEtl
   class Job
 
-    attr_reader :args, :errors, :row_data
+    attr_reader :args, :errors
 
     def run(args = {})
 
       @args = args
       @errors = []
-      @row_data = {}
 
       i = 0
 
@@ -106,8 +105,8 @@ module MomoEtl
 
       def run_single_transform(row, transform)
         
-        # Keep a pointer to the original data
-        orig_data = row.data
+        # Keep a pointer to the original meta-data
+        orig_meta = row.meta
 
         result = self.public_send(transform, row)
 
@@ -115,11 +114,11 @@ module MomoEtl
 
         # For the next tranformation,
         # - the result is passed as the row
-        # - extend the row if it doesn't respond to :data
-        # - merge the original data with the row data
+        # - extend the row if it doesn't respond to :meta
+        # - merge the original meta with the row meta
         row = result
-        row = row.extend(Row) unless result.respond_to?(:data)
-        row.data.merge!(orig_data)
+        row = row.extend(Row) unless result.respond_to?(:meta)
+        row.meta.merge!(orig_meta)
 
         row
       end
@@ -139,8 +138,8 @@ module MomoEtl
   end
 
   module Row
-    def data
-      @data ||= {}
+    def meta
+      @meta ||= {}
     end
   end
 
