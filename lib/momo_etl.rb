@@ -9,14 +9,13 @@ require "momo_etl/version"
 module MomoEtl
   class Job
 
-    attr_reader :args, :errors, :row_data, :fail_fast
+    attr_reader :args, :errors, :row_data
 
     def run(args = {})
 
       @args = args
       @errors = []
       @row_data = {}
-      @fail_fast = args[:fail_fast] || false
 
       i = 0
 
@@ -110,24 +109,16 @@ module MomoEtl
         # Keep a pointer to the original data
         orig_data = row.data
 
-        # invoke the transform, and take note of errors
-        row1 = with_ceremony do
-          self.public_send(transform, row)
-        end
+        result = self.public_send(transform, row)
 
-        # TODO: raise exception if row1 is not a hash
-        # If the transform returns nil, use the older row object
-        # If the transform returns non-nil, assign it to the row variable
-        if row1.nil?
-          row = row
-        else
-          row = row1
-        end
+        # TODO: raise exception if result is not a hash
 
-        # extend the row again, if its a new one, and doesn't respond to :data
-        row = row.extend(Row)   unless row.respond_to?(:data)
-
-        # merge the original data with the row data
+        # For the next tranformation,
+        # - the result is passed as the row
+        # - extend the row if it doesn't respond to :data
+        # - merge the original data with the row data
+        row = result
+        row = row.extend(Row) unless result.respond_to?(:data)
         row.data.merge!(orig_data)
 
         row
@@ -138,9 +129,6 @@ module MomoEtl
           yield
         rescue => e
           @errors << e
-          if fail_fast
-            raise
-          end
           nil
         end
       end
