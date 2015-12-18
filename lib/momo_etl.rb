@@ -9,12 +9,16 @@ require "momo_etl/version"
 module MomoEtl
   class Job
 
-    attr_reader :args, :errors
+    attr_reader :momo, :args, :errors
+    MomoData = Struct.new(:args, :errors)
 
     def run(args = {})
 
-      @args = args
-      @errors = []
+      @args    = args
+      @errors  = []
+      @outputs = []
+
+      @momo ||= MomoData.new(@args, @errors)
 
       i = 0
 
@@ -22,27 +26,19 @@ module MomoEtl
 
       read do |row|
 
-        row = row.extend(Row)
-
         if i==0
           validate(row.keys)
           before_all
         end
 
-        before_row(row)
-
-        row = run_transforms(row)
-        with_ceremony do
-          write(row)
-        end
-
-        after_row(row)
+        result = process_row(row)
+        @outputs << result
 
         i += 1
       end
+
       after_all
     end
-
 
     def checks!
       ## How to read. Must take a block, and yield a row-hash to it
@@ -51,9 +47,9 @@ module MomoEtl
       end
 
       ## How to write the row.
-      unless self.respond_to?(:write)
-        raise "ETL must have a `write` method"
-      end
+      #unless self.respond_to?(:write)
+      #  raise "ETL must have a `write` method"
+      #end
     end
 
     # Called before reading the rows
@@ -73,8 +69,6 @@ module MomoEtl
     def after_all
     end
 
-
-
     private
 
       def valid?(header)
@@ -87,16 +81,29 @@ module MomoEtl
         end
       end
 
-      def transforms
-        self.public_methods.grep(/^transform_*/)
+      def process_row(row)
+        row = row.extend(Row) unless row.respond_to?(:meta)
+
+        before_row(row)
+
+        row = run_transforms(row)
+        if row.applicable?('write')
+          with_ceremony do
+            write(row)
+          end
+        end
+
+        row = after_row(row)
+        row
       end
 
       def run_transforms(row)
         transforms.each do |transform|
           
-          # TODO: remove
-          # Skip if the transform is not defined, by any chance
-          next unless self.respond_to?(transform)
+          # Skip if at any point it is asked to skip
+          unless row.applicable?("transform_#{transform}")
+            return row
+          end
 
           row = run_single_transform(row, transform)
         end
@@ -132,6 +139,9 @@ module MomoEtl
         end
       end
 
+      def transforms
+        self.public_methods.grep(/^transform_*/)
+      end
   end
 
   class InvalidHeader < Exception
@@ -141,6 +151,18 @@ module MomoEtl
     def meta
       @meta ||= {}
     end
-  end
 
+    def skip!
+      @skip = true
+    end
+
+    def skip?
+      @skip
+    end
+
+    def applicable?(step)
+      return false if @skip
+      true
+    end
+  end
 end

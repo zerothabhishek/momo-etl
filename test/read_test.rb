@@ -6,13 +6,17 @@ class MomoEtlReadTest < Minitest::Test
 
   module SampleEtl
 
-    def read
-      args[:rowset].each{ |r| yield r }
+    attr_reader :read_list
+
+    def initialize
+      @read_list = []
     end
 
-    # Without any transforms, the write should get all the data that was read
-    def write(row)
-      args[:db] << row
+    def read
+      args[:rowset].each do |r|
+        @read_list << r
+        yield r
+      end
     end
   end
 
@@ -21,24 +25,21 @@ class MomoEtlReadTest < Minitest::Test
     def read
       yield({ a: 2 })
     end
-
-    def write(row); end
   end
 
   ## Tests ####################################
 
   def setup
-    @fake_db = []
     @sample_rows = [{ a: 10, b: 20 }, { a: 100, b: 200 }]
   end
 
   # Extraction happens in `read` method
   def test_read
 
-    klass = Class.new(MomoEtl::Job){ include SampleEtl }
-    klass.new.run(rowset: @sample_rows, db: @fake_db)
+    etl = Class.new(MomoEtl::Job){ include SampleEtl }.new
+    etl.run(rowset: @sample_rows)
 
-    assert_equal @sample_rows, @fake_db
+    assert_equal @sample_rows, etl.read_list
   end
 
   # Fails if read method is not defined

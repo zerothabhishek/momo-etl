@@ -5,110 +5,136 @@ class TransformTest < MiniTest::Test
   ## Samples ####################################
 
   module SampleEtl
+
+    attr_reader :es # executions list
+    def initialize
+      @es = []
+    end
+
     def read
       yield args[:rowset][0]
     end
 
     def transform_1(row)
       row[:c] = 30
+      @es << :transform_1
       row
     end
 
-    def write(row)
-      args[:db] << row
+    def transform_2(row)
+      @es << :transform_2
+      row
     end
   end
 
   module SampleEtl1
+
+    attr_reader :seq # executions sequence
+    def initialize
+      @seq = []
+    end
+
     def read
       args[:rowset].each{ |r| yield r }
     end
 
     def transform_a(row)
-      args[:seq] << "transform_a"
+      @seq << :transform_a
       row
     end
 
     def transform_b(row)
-      args[:seq] << "transform_b"
+      @seq << :transform_b
       row
     end
 
     def transform_c(row)
-      args[:seq] << "transform_c"
+      @seq << :transform_c
       row
-    end
-
-    def write(row)
     end
   end
 
   module SampleEtl2
+
+    attr_reader :inputs_for, :outputs_for
+
+    def initialize
+      @inputs_for = {}
+      @outputs_for = {}
+    end
+
     def read
       args[:rowset].each{ |r| yield r }
     end
 
     def transform_a(row)
-      args[:i][:transform_a] = row
+      inputs(:a, row)
       row[:a] = 1000
-      args[:o][:transform_a] = row
+      outputs(:a, row)
       row
     end
 
     def transform_b(row)
-      args[:i][:transform_b] = row
+      inputs(:b, row)
       row[:b] = 2000
-      args[:o][:transform_b] = row
+      outputs(:b, row)
       row
     end
 
     def transform_c(row)
-      args[:i][:transform_c] = row
+      inputs(:c, row)
       row[:c] = 1000
-      args[:o][:transform_c] = row
+      outputs(:c, row)
       row
     end
 
-    def write(row)
+    def inputs(transform, row)
+      @inputs_for[transform] ||= []
+      @inputs_for[transform] << row
     end
+
+    def outputs(transform, row)
+      @outputs_for[transform] ||= []
+      @outputs_for[transform] << row
+    end
+
   end
 
 
   ## Tests ####################################
 
-  def test__transforms0 # Transform methods get executed
+  def setup
+    @sample_rows = [{ a: 10, b: 20 }]
+  end
 
-    klass = Class.new(MomoEtl::Job){ include SampleEtl }
+  def test_transforms0 # Transform methods get executed
 
-    fake_db = []
-    row   = { a: 10, b: 20 }
-    row_t = { a: 10, b:20, c:30 }
+    etl = Class.new(MomoEtl::Job){ include SampleEtl }.new
+    etl.run(rowset: @sample_rows)
 
-    klass.new.run(rowset: [row], db: fake_db)
-    assert_equal(row_t, fake_db[0])
+    executions = etl.es
+    assert executions.include?(:transform_1) &&
+           executions.include?(:transform_2)
   end
 
   # Transform methods are run in order of appearance
-  def test__transforms1
-    row = { a: 10, b: 20 }
-    seq = []
-    klass = Class.new(MomoEtl::Job){ include SampleEtl1 }
-    klass.new.run(rowset: [row], seq: seq)
+  def test_transforms1
 
-    assert_equal %w(transform_a transform_b transform_c), seq
+    etl = Class.new(MomoEtl::Job){ include SampleEtl1 }.new
+    etl.run(rowset: @sample_rows)
+
+    sequence = etl.seq
+    assert_equal [:transform_a, :transform_b, :transform_c], sequence
   end
 
   # Input to each Transform method is the output of the previous one
-  def test__transforms2
-    row = { a: 10, b: 20 }
-    inputs = {}
-    outputs = {}
+  def test_transforms2
 
-    klass = Class.new(MomoEtl::Job){ include SampleEtl2 }
-    klass.new.run(rowset: [row], i: inputs, o: outputs)
+    etl = Class.new(MomoEtl::Job){ include SampleEtl2 }.new
+    etl.run(rowset: @sample_rows)
 
-    assert outputs[:transform_a] == inputs[:transform_b] &&
-           outputs[:transform_b] == inputs[:transform_c]
+    assert etl.outputs_for[:a] == etl.inputs_for[:b] &&
+           etl.outputs_for[:b] == etl.inputs_for[:c]
   end
 
   # TODO: Any failures in Transforms methods are recorded as `errors`

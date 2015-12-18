@@ -5,22 +5,31 @@ class WriteTest < MiniTest::Test
   ## Samples ####################################
 
   module SampleEtl
+
+    attr_reader :write_list
+
+    def initialize
+      @write_list = []
+    end
+
     def read
       args[:rowset].each{ |r| yield r }
     end
 
     def write(row)
-      args[:db] << row
-    end
-  end
-
-  module SampleEtl1
-    def read
-      args[:rowset].each{ |r| yield r }
+      @write_list << row
     end
   end
 
   module SampleEtl2
+
+    attr_reader :output_b, :write_input
+
+    def initialize
+      @output_b = []
+      @write_input = []
+    end
+
     def read
       args[:rowset].each{ |r| yield r }
     end
@@ -32,49 +41,37 @@ class WriteTest < MiniTest::Test
 
     def transform_b(row)
       row[:y] = 600
-      args[:o][:transform_b] = row
+      @output_b << row
       row
     end
 
     def write(row)
-      args[:i][:write] = row
+      @write_input << row
     end
   end
-
 
   ## Tests ####################################
 
   def setup
-    @fake_db = []
     @sample_rows = [{ a: 10, b: 20 }, { a: 100, b: 200 }]
   end
 
   # Load happens in `write` method
-  def test__write
+  # Given row is written back when there are no transforms
+  def test_write
 
-    klass = Class.new(MomoEtl::Job){ include SampleEtl }
-    klass.new.run(rowset: @sample_rows, db: @fake_db)
+    etl = Class.new(MomoEtl::Job){ include SampleEtl }.new
+    etl.run(rowset: @sample_rows)
 
-    assert_equal @fake_db, @sample_rows
-  end
-
-  # Fails if `write` method is not defined
-  def test__write1
-
-    klass = Class.new(MomoEtl::Job){ include SampleEtl1 }
-
-    assert_raises("ETL must have a `write` method") do
-      klass.new.run(rowset: @sample_rows)
-    end
+    assert_equal @sample_rows, etl.write_list
   end
 
   # output from the last transform is the input to write
   def test_write2
-    inputs = {}
-    outputs = {}
-    klass = Class.new(MomoEtl::Job){ include SampleEtl2 }
-    klass.new.run(rowset: @sample_rows, i: inputs, o: outputs)
 
-    assert outputs[:transform_b] == inputs[:write]
+    etl = Class.new(MomoEtl::Job){ include SampleEtl2 }.new
+    etl.run(rowset: @sample_rows)
+
+    assert etl.output_b == etl.write_input
   end
 end
