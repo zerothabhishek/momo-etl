@@ -13,7 +13,7 @@ class WriteTest < MiniTest::Test
     end
 
     def read
-      args[:rowset].each{ |r| yield r }
+      args[:rowset]
     end
 
     def write(row)
@@ -31,7 +31,7 @@ class WriteTest < MiniTest::Test
     end
 
     def read
-      args[:rowset].each{ |r| yield r }
+      args[:rowset]
     end
 
     def transform_a(row)

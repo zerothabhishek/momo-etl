@@ -6,7 +6,7 @@ class MetaTest < MiniTest::Test
 
   module SampleEtl
     def read
-      args[:rowset].each{ |r| yield r }
+      args[:rowset]
     end
 
     def transform_a(row) ## adds :id to meta
@@ -20,7 +20,7 @@ class MetaTest < MiniTest::Test
 
   module SampleEtl2
     def read
-      args[:rowset].each{ |r| yield r }
+      args[:rowset]
     end
 
     def transform_a(row) ## adds :id to meta

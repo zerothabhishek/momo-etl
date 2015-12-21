@@ -24,20 +24,25 @@ module MomoEtl
 
       checks!
 
-      read do |row|
-
-        if i==0
+      @stream = read
+      @outputs = @stream.map do |row|
+        if i == 0
           validate(row.keys)
           before_all
         end
 
         result = process_row(row)
-        @outputs << result
-
         i += 1
+        result
       end
 
       after_all
+
+      if block_given?
+        @outputs
+      else
+        @outputs.to_a
+      end
     end
 
     def checks!

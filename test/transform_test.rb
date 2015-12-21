@@ -12,7 +12,7 @@ class TransformTest < MiniTest::Test
     end
 
     def read
-      yield args[:rowset][0]
+      args[:rowset]
     end
 
     def transform_1(row)
@@ -35,7 +35,7 @@ class TransformTest < MiniTest::Test
     end
 
     def read
-      args[:rowset].each{ |r| yield r }
+      args[:rowset]
     end
 
     def transform_a(row)
@@ -64,7 +64,7 @@ class TransformTest < MiniTest::Test
     end
 
     def read
-      args[:rowset].each{ |r| yield r }
+      args[:rowset]
     end
 
     def transform_a(row)

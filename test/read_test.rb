@@ -13,9 +13,9 @@ class MomoEtlReadTest < Minitest::Test
     end
 
     def read
-      args[:rowset].each do |r|
+      args[:rowset].lazy.map do |r|
         @read_list << r
-        yield r
+        r
       end
     end
   end
@@ -23,7 +23,7 @@ class MomoEtlReadTest < Minitest::Test
   module SampleEtl2
 
     def read
-      yield({ a: 2 })
+      [{ a: 2 }]
     end
   end
 
@@ -52,13 +52,22 @@ class MomoEtlReadTest < Minitest::Test
   end
 
   # `read` method should yield a hash to the supplied block
+  #def test_read2
+  #
+  #  klass = Class.new(MomoEtl::Job){ include SampleEtl2 }
+  #  j = klass.new
+  #
+  #  t = nil
+  #  j.read { |h| t = h }
+  #  assert_equal Hash, t.class
+  #end
+
+  # `read` method should give an enumerator
   def test_read2
 
-    klass = Class.new(MomoEtl::Job){ include SampleEtl2 }
-    j = klass.new
+    etl = Class.new(MomoEtl::Job){ include SampleEtl2 }.new
 
-    t = nil
-    j.read { |h| t = h }
-    assert_equal Hash, t.class
+    x = etl.read
+    assert x.is_a?(Enumerable)
   end
 end
