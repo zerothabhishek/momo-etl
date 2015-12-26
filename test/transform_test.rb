@@ -109,7 +109,7 @@ class TransformTest < MiniTest::Test
 
   def test_transforms0 # Transform methods get executed
 
-    etl = Class.new(MomoEtl::Job){ include SampleEtl }.new
+    etl = Class.new(MomoEtl::Base){ include SampleEtl }.new
     etl.run(rowset: @sample_rows)
 
     executions = etl.es
@@ -120,7 +120,7 @@ class TransformTest < MiniTest::Test
   # Transform methods are run in order of appearance
   def test_transforms1
 
-    etl = Class.new(MomoEtl::Job){ include SampleEtl1 }.new
+    etl = Class.new(MomoEtl::Base){ include SampleEtl1 }.new
     etl.run(rowset: @sample_rows)
 
     sequence = etl.seq
@@ -130,7 +130,7 @@ class TransformTest < MiniTest::Test
   # Input to each Transform method is the output of the previous one
   def test_transforms2
 
-    etl = Class.new(MomoEtl::Job){ include SampleEtl2 }.new
+    etl = Class.new(MomoEtl::Base){ include SampleEtl2 }.new
     etl.run(rowset: @sample_rows)
 
     assert etl.outputs_for[:a] == etl.inputs_for[:b] &&

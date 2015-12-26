@@ -101,7 +101,7 @@ class SkipTest < MiniTest::Test
   # Transforms after skip! are not executed for a row
   def test_skip
 
-    etl = Class.new(MomoEtl::Job){ include SampleEtl }.new
+    etl = Class.new(MomoEtl::Base){ include SampleEtl }.new
     etl.run(rowset: @sample_rows)
 
     execution_list = etl.el
@@ -112,7 +112,7 @@ class SkipTest < MiniTest::Test
   # Transforms are skipped only for the current row
   def test_skip2
 
-    etl = Class.new(MomoEtl::Job){ include SampleEtl2 }.new
+    etl = Class.new(MomoEtl::Base){ include SampleEtl2 }.new
     etl.run(rowset: @sample_rows)
 
     list1 = etl.el[0]
@@ -127,7 +127,7 @@ class SkipTest < MiniTest::Test
   # The current transform is not skipped
   def test_skip3
 
-    etl = Class.new(MomoEtl::Job){ include SampleEtl3 }.new
+    etl = Class.new(MomoEtl::Base){ include SampleEtl3 }.new
     etl.run(rowset: [@sample_rows[0]])
 
     execution_list = etl.el

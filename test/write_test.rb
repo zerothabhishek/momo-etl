@@ -60,7 +60,7 @@ class WriteTest < MiniTest::Test
   # Given row is written back when there are no transforms
   def test_write
 
-    etl = Class.new(MomoEtl::Job){ include SampleEtl }.new
+    etl = Class.new(MomoEtl::Base){ include SampleEtl }.new
     etl.run(rowset: @sample_rows)
 
     assert_equal @sample_rows, etl.write_list
@@ -69,7 +69,7 @@ class WriteTest < MiniTest::Test
   # output from the last transform is the input to write
   def test_write2
 
-    etl = Class.new(MomoEtl::Job){ include SampleEtl2 }.new
+    etl = Class.new(MomoEtl::Base){ include SampleEtl2 }.new
     etl.run(rowset: @sample_rows)
 
     assert etl.output_b == etl.write_input

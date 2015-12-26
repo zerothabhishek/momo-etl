@@ -51,7 +51,7 @@ class MetaTest < MiniTest::Test
   # Each row gets a meta attribute hash
   def test_meta1
     metas = []
-    klass = Class.new(MomoEtl::Job){ include SampleEtl }
+    klass = Class.new(MomoEtl::Base){ include SampleEtl }
     klass.new.run(rowset: @sample_rows, metas: metas)
 
     assert metas.all? do |meta|
@@ -63,7 +63,7 @@ class MetaTest < MiniTest::Test
   # :meta data gets merged after transforms
   def test_meta2
     metas = []
-    klass = Class.new(MomoEtl::Job){ include SampleEtl2 }
+    klass = Class.new(MomoEtl::Base){ include SampleEtl2 }
     klass.new.run(rowset: @sample_rows, metas: metas)
 
     assert metas.all? do |meta0|

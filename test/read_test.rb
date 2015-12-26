@@ -36,7 +36,7 @@ class MomoEtlReadTest < Minitest::Test
   # Extraction happens in `read` method
   def test_read
 
-    etl = Class.new(MomoEtl::Job){ include SampleEtl }.new
+    etl = Class.new(MomoEtl::Base){ include SampleEtl }.new
     etl.run(rowset: @sample_rows)
 
     assert_equal @sample_rows, etl.read_list
@@ -45,7 +45,7 @@ class MomoEtlReadTest < Minitest::Test
   # Fails if read method is not defined
   def test_read1
 
-    klass = Class.new(MomoEtl::Job)
+    klass = Class.new(MomoEtl::Base)
     assert_raises("ETL must have a `read` method") do
       klass.new.run(rowset: @sample_rows)
     end
@@ -54,7 +54,7 @@ class MomoEtlReadTest < Minitest::Test
   # `read` method should yield a hash to the supplied block
   #def test_read2
   #
-  #  klass = Class.new(MomoEtl::Job){ include SampleEtl2 }
+  #  klass = Class.new(MomoEtl::Base){ include SampleEtl2 }
   #  j = klass.new
   #
   #  t = nil
@@ -65,7 +65,7 @@ class MomoEtlReadTest < Minitest::Test
   # `read` method should give an enumerator
   def test_read2
 
-    etl = Class.new(MomoEtl::Job){ include SampleEtl2 }.new
+    etl = Class.new(MomoEtl::Base){ include SampleEtl2 }.new
 
     x = etl.read
     assert x.is_a?(Enumerable)
